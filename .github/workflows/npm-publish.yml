@@ -1,0 +1,41 @@
+name: Publish better-auth-bili-basic
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+    paths:
+      - package.json
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: npm publish
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build better-auth-bili-basic
+        run: |
+          cd ${{ github.workspace }}
+          bun run build
+
+      - name: Publish better-auth-bili-basic
+        run: |
+          cd ${{ github.workspace }}
+          bun publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - run: pnpx changelogithub
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

@@ -1,0 +1,1 @@
+export const providerId = 'bili-basic';
