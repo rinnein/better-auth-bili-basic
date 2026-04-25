@@ -4,8 +4,12 @@ import {
   RevokeBiliInfo,
   ValidateBiliInfo,
 } from '@/lib/validate-bili-info';
-import type { Account, BetterAuthPlugin, User } from 'better-auth';
-import { APIError, createAuthEndpoint } from 'better-auth/api';
+import type { Account, BetterAuthPlugin } from 'better-auth';
+import {
+  APIError,
+  createAuthEndpoint,
+  sessionMiddleware,
+} from 'better-auth/api';
 import { setSessionCookie } from 'better-auth/cookies';
 import { nanoid } from 'nanoid';
 import z from 'zod';
@@ -139,8 +143,8 @@ export const biliBasicPlugin = ({
           });
         },
       ),
-      verify: createAuthEndpoint(
-        `/${providerId}/verify`,
+      link: createAuthEndpoint(
+        `/${providerId}/link`,
         {
           method: 'POST',
           body: requestBodySchema.extend(
@@ -153,20 +157,13 @@ export const biliBasicPlugin = ({
               ]),
             }).shape,
           ),
+          use: [sessionMiddleware],
         },
         async (ctx) => {
           const now = new Date();
           const mid = ctx.body.mid;
           const midBigInt = parseMid(mid);
-          const sessionUser = ctx.context.session?.user;
-          const allowSignUp = signUpOnVerification?.enabled ?? false;
-
-          if (!allowSignUp && !sessionUser) {
-            throw new APIError('BAD_REQUEST', {
-              message:
-                'Sign-up on verification is disabled. Please sign in before linking.',
-            });
-          }
+          const sessionUser = ctx.context.session.user;
 
           const challenge =
             await ctx.context.internalAdapter.findVerificationValue(
@@ -189,21 +186,19 @@ export const biliBasicPlugin = ({
             });
           }
 
-          if (sessionUser) {
-            const hasBinding = await ctx.context.adapter.findOne<Account>({
-              model: 'account',
-              where: [
-                { field: 'providerId', value: providerId },
-                { field: 'userId', value: sessionUser.id },
-              ],
-            });
+          const hasBinding = await ctx.context.adapter.findOne<Account>({
+            model: 'account',
+            where: [
+              { field: 'providerId', value: providerId },
+              { field: 'userId', value: sessionUser.id },
+            ],
+          });
 
-            if (hasBinding) {
-              throw new APIError('BAD_REQUEST', {
-                message:
-                  'Your account already has a binding. Please unlink it before linking a new mid.',
-              });
-            }
+          if (hasBinding) {
+            throw new APIError('BAD_REQUEST', {
+              message:
+                'Your account already has a binding. Please unlink it before linking a new mid.',
+            });
           }
 
           const validation = await ValidateBiliInfo(
@@ -232,36 +227,230 @@ export const biliBasicPlugin = ({
             });
           }
 
-          let user: User | null = sessionUser ?? null;
-          let session = ctx.context.session?.session;
-          let pwd: string | undefined = undefined;
+          const account = await ctx.context.internalAdapter.createAccount({
+            accountId: mid,
+            providerId,
+            userId: sessionUser.id,
+            createdAt: now,
+            updatedAt: now,
+          });
 
-          if (!user?.id) {
-            const tempEmail =
-              signUpOnVerification?.getTempEmail?.(mid) ??
-              `${mid}@${userEmailDomain}`;
-            const tempName =
-              signUpOnVerification?.getTempName?.(mid) ??
-              validation.data?.name ??
-              `${defaultUserNamePrefix}_${mid}`;
+          await ctx.context.internalAdapter.deleteVerificationByIdentifier(
+            ctx.body.identifier,
+          );
 
-            user = await ctx.context.internalAdapter.createUser({
-              email: tempEmail,
-              emailVerified: true,
-              name: tempName,
-              createdAt: now,
-              updatedAt: now,
-            });
+          return ctx.json({
+            success: true,
+            data: {
+              account,
+              session: ctx.context.session.session,
+              user: sessionUser,
+            },
+          });
+        },
+      ),
+      signIn: createAuthEndpoint(
+        `/sign-in/${providerId}`,
+        {
+          method: 'POST',
+          body: requestBodySchema.extend(
+            z.object({
+              identifier: z.templateLiteral([
+                z.string().startsWith(`${providerId}:bind:`),
+                z.string().length(8),
+                z.literal(':'),
+                z.nanoid(),
+              ]),
+            }).shape,
+          ),
+        },
+        async (ctx) => {
+          const now = new Date();
+          const mid = ctx.body.mid;
+          const midBigInt = parseMid(mid);
 
-            pwd = nanoid();
-            await ctx.context.internalAdapter.updatePassword(user.id, pwd);
+          const challenge =
+            await ctx.context.internalAdapter.findVerificationValue(
+              ctx.body.identifier,
+            );
 
-            session = await ctx.context.internalAdapter.createSession(user.id);
-            await setSessionCookie(ctx, {
-              session,
-              user,
+          if (!challenge) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'No pending challenge found for this mid.',
             });
           }
+
+          if (challenge.expiresAt.getTime() <= now.getTime()) {
+            await ctx.context.adapter.deleteMany({
+              model: 'verification',
+              where: [{ field: 'expiresAt', value: now, operator: 'lte' }],
+            });
+            throw new APIError('BAD_REQUEST', {
+              message: 'Challenge expired. Request a new code and retry.',
+            });
+          }
+
+          const validation = await ValidateBiliInfo(
+            midBigInt,
+            challenge.value,
+            infoRestrictions,
+            authMark,
+          );
+
+          if (!validation.success) {
+            throw new APIError('BAD_REQUEST', {
+              message: toErrorMessage(validation.error),
+            });
+          }
+
+          const account =
+            await ctx.context.internalAdapter.findAccountByProviderId(
+              mid,
+              providerId,
+            );
+
+          if (!account) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'No account bound to this mid. Please sign up first.',
+            });
+          }
+
+          const user = await ctx.context.internalAdapter.findUserById(
+            account.userId,
+          );
+          if (!user) {
+            throw new APIError('INTERNAL_SERVER_ERROR', {
+              message: 'User not found for the bound account.',
+            });
+          }
+
+          const pwd = nanoid();
+          await ctx.context.internalAdapter.updatePassword(user.id, pwd);
+
+          const session = await ctx.context.internalAdapter.createSession(
+            user.id,
+          );
+          await setSessionCookie(ctx, {
+            session,
+            user,
+          });
+
+          await ctx.context.internalAdapter.deleteVerificationByIdentifier(
+            ctx.body.identifier,
+          );
+
+          return ctx.json({
+            success: true,
+            data: {
+              account,
+              session,
+              user,
+              defaultPassword: pwd,
+            },
+          });
+        },
+      ),
+      signUp: createAuthEndpoint(
+        `/sign-up/${providerId}`,
+        {
+          method: 'POST',
+          body: requestBodySchema.extend(
+            z.object({
+              identifier: z.templateLiteral([
+                z.string().startsWith(`${providerId}:bind:`),
+                z.string().length(8),
+                z.literal(':'),
+                z.nanoid(),
+              ]),
+            }).shape,
+          ),
+        },
+        async (ctx) => {
+          const now = new Date();
+          const mid = ctx.body.mid;
+          const midBigInt = parseMid(mid);
+          const allowSignUp = signUpOnVerification?.enabled ?? false;
+
+          if (!allowSignUp) {
+            throw new APIError('BAD_REQUEST', {
+              message:
+                'Sign-up on verification is disabled. Please sign in before linking.',
+            });
+          }
+
+          const challenge =
+            await ctx.context.internalAdapter.findVerificationValue(
+              ctx.body.identifier,
+            );
+
+          if (!challenge) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'No pending challenge found for this mid.',
+            });
+          }
+
+          if (challenge.expiresAt.getTime() <= now.getTime()) {
+            await ctx.context.adapter.deleteMany({
+              model: 'verification',
+              where: [{ field: 'expiresAt', value: now, operator: 'lte' }],
+            });
+            throw new APIError('BAD_REQUEST', {
+              message: 'Challenge expired. Request a new code and retry.',
+            });
+          }
+
+          const validation = await ValidateBiliInfo(
+            midBigInt,
+            challenge.value,
+            infoRestrictions,
+            authMark,
+          );
+
+          if (!validation.success) {
+            throw new APIError('BAD_REQUEST', {
+              message: toErrorMessage(validation.error),
+            });
+          }
+
+          const existingBinding =
+            await ctx.context.internalAdapter.findAccountByProviderId(
+              mid,
+              providerId,
+            );
+
+          if (existingBinding) {
+            throw new APIError('BAD_REQUEST', {
+              message:
+                'This mid is already bound. If you own this account, publish revoke mark and call revoke endpoint first.',
+            });
+          }
+
+          const tempEmail =
+            signUpOnVerification?.getTempEmail?.(mid) ??
+            `${mid}@${userEmailDomain}`;
+          const tempName =
+            signUpOnVerification?.getTempName?.(mid) ??
+            validation.data?.name ??
+            `${defaultUserNamePrefix}_${mid}`;
+
+          const user = await ctx.context.internalAdapter.createUser({
+            email: tempEmail,
+            emailVerified: true,
+            name: tempName,
+            createdAt: now,
+            updatedAt: now,
+          });
+
+          const pwd = nanoid();
+          await ctx.context.internalAdapter.updatePassword(user.id, pwd);
+
+          const session = await ctx.context.internalAdapter.createSession(
+            user.id,
+          );
+          await setSessionCookie(ctx, {
+            session,
+            user,
+          });
 
           const account = await ctx.context.internalAdapter.createAccount({
             accountId: mid,
@@ -347,7 +536,17 @@ export const biliBasicPlugin = ({
         window: 60,
       },
       {
-        pathMatcher: (path) => path === `/${providerId}/verify`,
+        pathMatcher: (path) => path === `/${providerId}/link`,
+        max: 10,
+        window: 60,
+      },
+      {
+        pathMatcher: (path) => path === `/sign-in/${providerId}`,
+        max: 10,
+        window: 60,
+      },
+      {
+        pathMatcher: (path) => path === `/sign-up/${providerId}`,
         max: 10,
         window: 60,
       },
