@@ -1,9 +1,6 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
-
-const { default: dts } = (await import('unplugin-dts/vite')) as unknown as {
-  default: (...args: any[]) => any;
-};
+import dts from 'unplugin-dts/vite';
 
 export default defineConfig({
   build: {
@@ -14,8 +11,7 @@ export default defineConfig({
       },
       name: 'BetterAuthBiliBasic',
       formats: ['es', 'cjs'],
-      fileName: (format: string, entryName: string) =>
-        `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
+      fileName: (_format: string, entryName: string) => entryName,
     },
   },
   plugins: [dts()],
