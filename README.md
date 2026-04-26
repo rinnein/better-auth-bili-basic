@@ -19,15 +19,16 @@ import { biliBasicPlugin } from 'better-auth-bili-basic';
 import { biliBasicClient } from 'better-auth-bili-basic/client';
 
 const auth = betterAuth({
-	plugins: [biliBasicPlugin()],
+  plugins: [biliBasicPlugin()],
 });
 
 const client = createAuthClient({
-	plugins: [biliBasicClient()],
+  plugins: [biliBasicClient()],
 });
 
 await client.biliBasic.send(123456n);
-await client.signIn.biliBasic({ mid: 123456n, identifier: 'bili-basic:bind:12345678:abcde' });
-
+await client.signIn.biliBasic({
+  mid: 123456n,
+  identifier: 'bili-basic:bind:12345678:abcde',
+});
 ```
-

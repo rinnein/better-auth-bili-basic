@@ -2,10 +2,35 @@
   "name": "better-auth-bili-basic",
   "version": "0.0.1",
   "description": "A plugin for better-auth that provides basic authentication features for bili accounts.",
+  "keywords": [
+    "authentication",
+    "better-auth",
+    "bili",
+    "bilibili",
+    "plugin"
+  ],
+  "homepage": "https://github.com/rinnein/better-auth-bili-basic#readme",
+  "bugs": {
+    "url": "https://github.com/rinnein/better-auth-bili-basic/issues"
+  },
+  "license": "MIT",
+  "author": "rinnein",
+  "contributors": [
+    "rinnein (https://github.com/rinnein)"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rinnein/better-auth-bili-basic.git"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -18,40 +43,15 @@
       "import": "./dist/client/index.js"
     }
   },
-  "files": [
-    "dist/**/*",
-    "README.md",
-    "LICENSE"
-  ],
   "scripts": {
     "build": "vite build"
   },
-  "repository": {
-    "url": "https://github.com/rinnein/better-auth-bili-basic.git",
-    "type": "git"
-  },
-  "keywords": [
-    "better-auth",
-    "bili",
-    "bilibili",
-    "authentication",
-    "plugin"
-  ],
-  "author": "rinnein",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/rinnein/better-auth-bili-basic/issues"
-  },
-  "homepage": "https://github.com/rinnein/better-auth-bili-basic#readme",
   "dependencies": {
     "better-auth": "^1.6.7",
     "ky": "^2.0.2",
     "nanoid": "^5.1.9",
     "zod": "^4.3.6"
   },
-  "contributors": [
-    "rinnein (https://github.com/rinnein)"
-  ],
   "devDependencies": {
     "@microsoft/api-extractor": "^7.58.7",
     "@types/node": "^25.6.0",
