@@ -13,5 +13,21 @@ bun install better-auth-bili-basic
 ## 使用
 
 ```ts
-import { biliBasicAuth } from 'better-auth-bili-basic';
+import { betterAuth } from 'better-auth';
+import { createAuthClient } from 'better-auth/client';
+import { biliBasicPlugin } from 'better-auth-bili-basic';
+import { biliBasicClient } from 'better-auth-bili-basic/client';
+
+const auth = betterAuth({
+	plugins: [biliBasicPlugin()],
+});
+
+const client = createAuthClient({
+	plugins: [biliBasicClient()],
+});
+
+await client.biliBasic.send(123456n);
+await client.signIn.biliBasic({ mid: 123456n, identifier: 'bili-basic:bind:12345678:abcde' });
+
+```
 

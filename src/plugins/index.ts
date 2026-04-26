@@ -13,7 +13,7 @@ import {
 import { setSessionCookie } from 'better-auth/cookies';
 import { nanoid } from 'nanoid';
 import z from 'zod';
-import { providerId } from './const';
+import { pluginId, providerId } from '../const';
 
 export interface BiliBasicPluginOptions {
   infoRestrictions?: BiliInfoValidationOptionsZodType;
@@ -35,6 +35,13 @@ export interface BiliBasicPluginOptions {
 const requestBodySchema = z.object({
   mid: z.string().regex(/^\d+$/, 'mid must be numeric string'),
 });
+
+export const identifierSchema = z.templateLiteral([
+  z.string().startsWith(`${providerId}:bind:`),
+  z.string().length(8),
+  z.literal(':'),
+  z.nanoid(),
+]);
 
 function parseMid(mid: string) {
   if (!/^\d+$/.test(mid)) {
@@ -66,7 +73,9 @@ async function HashMid(mid: string) {
     .slice(0, 8);
 }
 
-export const biliBasicPlugin = ({
+export const biliBasic: (
+  options?: BiliBasicPluginOptions,
+) => BetterAuthPlugin = ({
   infoRestrictions = BiliInfoValidationOptionsDefaultSchema,
   authMark = 'bauth',
   codeTTLSeconds = 3600,
@@ -78,7 +87,7 @@ export const biliBasicPlugin = ({
   const ttlMs = Math.max(1, codeTTLSeconds) * 1000;
 
   return {
-    id: 'biliBasicPlugin',
+    id: pluginId,
     endpoints: {
       send: createAuthEndpoint(
         `/${providerId}/send`,
@@ -255,12 +264,7 @@ export const biliBasicPlugin = ({
           method: 'POST',
           body: requestBodySchema.extend(
             z.object({
-              identifier: z.templateLiteral([
-                z.string().startsWith(`${providerId}:bind:`),
-                z.string().length(8),
-                z.literal(':'),
-                z.nanoid(),
-              ]),
+              identifier: identifierSchema,
             }).shape,
           ),
         },
