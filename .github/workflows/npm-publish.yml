@@ -22,6 +22,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          registry-url: 'https://registry.npmjs.org'
+
       - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
@@ -35,7 +40,7 @@ jobs:
       - name: Publish better-auth-bili-basic
         run: |
           cd ${{ github.workspace }}
-          npm publish
+          npm publish --provenance --access public
 
       - run: bun x changelogithub
         env:
