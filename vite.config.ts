@@ -11,7 +11,6 @@ export default defineConfig({
       },
       name: 'BetterAuthBiliBasic',
       formats: ['es', 'cjs'],
-      fileName: (_format: string, entryName: string) => entryName,
     },
   },
   plugins: [dts()],
