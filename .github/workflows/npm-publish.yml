@@ -36,7 +36,7 @@ jobs:
       - name: Publish better-auth-bili-basic
         run: |
           cd ${{ github.workspace }}
-          bun publish --provenance --access public
+          bun x npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
