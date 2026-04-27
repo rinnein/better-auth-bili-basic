@@ -35,8 +35,8 @@ jobs:
       - name: Publish better-auth-bili-basic
         run: |
           cd ${{ github.workspace }}
-          bun x npm publish
+          npm publish
 
-      - run: pnpx changelogithub
+      - run: bun x changelogithub
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
