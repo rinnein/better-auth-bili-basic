@@ -1,6 +1,6 @@
-import ky, { KyInstance } from 'ky';
+import ky from 'ky';
 
-export const kyi: KyInstance = ky.create({
+export const kyi = ky.create({
   headers: {
     'User-Agent':
       'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',

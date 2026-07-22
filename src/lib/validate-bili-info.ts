@@ -1,5 +1,5 @@
 import z from 'zod';
-import { BiliInfo } from './bili-info';
+import { BiliInfo } from './bili-info.ts';
 
 export type BiliInfoValidationOptionsZodType = z.ZodObject<
   Partial<{
@@ -25,23 +25,7 @@ export async function ValidateBiliInfo(
   code?: string,
   options: BiliInfoValidationOptionsZodType = BiliInfoValidationOptionsDefaultSchema,
   authMark: string = 'bauth',
-): Promise<{
-    success: boolean;
-    error: Error;
-    data?: undefined;
-} | {
-    error?: undefined;
-    success: boolean;
-    data: {
-        mid: string;
-        name: string;
-        ban: boolean;
-        fans: number;
-        sign: string;
-        level: number;
-        vip: number;
-    };
-}> {
+) {
   const info = await BiliInfo(mid);
   const card = info.data.card;
   const v = {
@@ -64,13 +48,7 @@ export async function ValidateBiliInfo(
   else return { success: false, error: customCheck.error };
 }
 
-export async function RevokeBiliInfo(mid: bigint, authMark: string = 'bauth'): Promise<{
-    success: boolean;
-    error?: undefined;
-} | {
-    success: boolean;
-    error: Error;
-}> {
+export async function RevokeBiliInfo(mid: bigint, authMark: string = 'bauth') {
   if (authMark === 'dev') return { success: true };
   const info = await BiliInfo(mid);
   if (info.data.card.sign.includes(`${authMark}::revoke`))

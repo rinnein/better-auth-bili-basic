@@ -1,17 +1,46 @@
-import { resolve } from 'node:path';
-import { defineConfig } from 'vite';
-import dts from 'unplugin-dts/vite';
+import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
-  build: {
-    lib: {
-      entry: {
-        index: resolve(import.meta.dirname, 'src/index.ts'),
-        'client/index': resolve(import.meta.dirname, 'src/client/index.ts'),
-      },
-      name: 'BetterAuthBiliBasic',
-      formats: ['es', 'cjs'],
+  staged: {
+    '*': 'vp check --fix',
+  },
+  fmt: {
+    printWidth: 80,
+    useTabs: false,
+    singleQuote: true,
+    jsxSingleQuote: false,
+    quoteProps: 'as-needed',
+    trailingComma: 'all',
+    arrowParens: 'always',
+    objectWrap: 'preserve',
+    insertFinalNewline: true,
+    embeddedLanguageFormatting: 'auto',
+    htmlWhitespaceSensitivity: 'css',
+    proseWrap: 'preserve',
+    sortPackageJson: {
+      sortScripts: true,
     },
   },
-  plugins: [dts()],
+  lint: {
+    options: {
+      typeAware: true,
+      typeCheck: true,
+    },
+  },
+  resolve: {
+    tsconfigPaths: true,
+  },
+  pack: {
+    entry: {
+      index: './src/index.ts',
+      'client/index': './src/client/index.ts',
+    },
+    name: 'BetterAuthBiliBasic',
+    format: ['es', 'cjs'],
+    dts: {
+      tsgo: true,
+    },
+    exports: true,
+    minify: true,
+  },
 });

@@ -1,7 +1,7 @@
 import type { BetterAuthClientPlugin } from 'better-auth';
-import { ObjId, pluginId, providerId } from '../const';
-import { biliBasic, identifierSchema } from '../plugins/index';
-import { BetterFetch, BetterFetchOption } from 'better-auth/client';
+import { ObjId, pluginId, providerId } from '../const.ts';
+import { biliBasic, identifierSchema } from '../plugins/index.ts';
+import type { BetterFetchOption } from 'better-auth/client';
 
 export interface BiliBasicClientOptions {}
 
@@ -24,77 +24,7 @@ function midParser(mid: MID) {
   return mid;
 }
 
-export const biliBasicClient = (_options: BiliBasicClientOptions = {}): {
-    id: "bili-basic";
-    $InferServerPlugin: ReturnType<typeof biliBasic>;
-    atomListeners: {
-        signal: "$sessionSignal";
-        matcher(path: string): boolean;
-    }[];
-    getActions: ($fetch: BetterFetch) => {
-        biliBasic: {
-            send: (mid: bigint, fetchOptions?: BetterFetchOption) => Promise<{
-                data: unknown;
-                error: null;
-            } | {
-                data: null;
-                error: {
-                    message?: string;
-                    status: number;
-                    statusText: string;
-                };
-            }>;
-            link: (mid: bigint, identifier: string, fetchOptions?: BetterFetchOption) => Promise<{
-                data: unknown;
-                error: null;
-            } | {
-                data: null;
-                error: {
-                    message?: string;
-                    status: number;
-                    statusText: string;
-                };
-            }>;
-            revoke: (mid: bigint, fetchOptions?: BetterFetchOption) => Promise<{
-                data: unknown;
-                error: null;
-            } | {
-                data: null;
-                error: {
-                    message?: string;
-                    status: number;
-                    statusText: string;
-                };
-            }>;
-        };
-        signIn: {
-            biliBasic: (mid: bigint, identifier: string, fetchOptions?: BetterFetchOption) => Promise<{
-                data: unknown;
-                error: null;
-            } | {
-                data: null;
-                error: {
-                    message?: string;
-                    status: number;
-                    statusText: string;
-                };
-            }>;
-        };
-        signUp: {
-            biliBasic: (mid: bigint, identifier: string, fetchOptions?: BetterFetchOption) => Promise<{
-                data: unknown;
-                error: null;
-            } | {
-                data: null;
-                error: {
-                    message?: string;
-                    status: number;
-                    statusText: string;
-                };
-            }>;
-        };
-    };
-} => {
+export const biliBasicClient = (_options: BiliBasicClientOptions = {}) => {
   return {
     id: pluginId,
     $InferServerPlugin: {} as ReturnType<typeof biliBasic>,
@@ -109,17 +39,7 @@ export const biliBasicClient = (_options: BiliBasicClientOptions = {}): {
     getActions: ($fetch) => {
       return {
         biliBasic: {
-          send: async (mid: bigint, fetchOptions?: BetterFetchOption): Promise<{
-              data: unknown;
-              error: null;
-          } | {
-              data: null;
-              error: {
-                  message?: string;
-                  status: number;
-                  statusText: string;
-              };
-          }> => {
+          send: async (mid: bigint, fetchOptions?: BetterFetchOption) => {
             const res = $fetch(`/${providerId}/send`, {
               method: 'POST',
               body: { mid: midParser(mid) },
@@ -131,17 +51,7 @@ export const biliBasicClient = (_options: BiliBasicClientOptions = {}): {
             mid: bigint,
             identifier: string,
             fetchOptions?: BetterFetchOption,
-          ): Promise<{
-                  data: unknown;
-                  error: null;
-              } | {
-                  data: null;
-                  error: {
-                      message?: string;
-                      status: number;
-                      statusText: string;
-                  };
-              }> => {
+          ) => {
             const res = $fetch(`/${providerId}/link`, {
               method: 'POST',
               body: {
@@ -152,17 +62,7 @@ export const biliBasicClient = (_options: BiliBasicClientOptions = {}): {
             });
             return res;
           },
-          revoke: async (mid: bigint, fetchOptions?: BetterFetchOption): Promise<{
-              data: unknown;
-              error: null;
-          } | {
-              data: null;
-              error: {
-                  message?: string;
-                  status: number;
-                  statusText: string;
-              };
-          }> => {
+          revoke: async (mid: bigint, fetchOptions?: BetterFetchOption) => {
             const res = $fetch(`/${providerId}/revoke`, {
               method: 'POST',
               body: { mid: midParser(mid) },
@@ -176,17 +76,7 @@ export const biliBasicClient = (_options: BiliBasicClientOptions = {}): {
             mid: bigint,
             identifier: string,
             fetchOptions?: BetterFetchOption,
-          ): Promise<{
-                  data: unknown;
-                  error: null;
-              } | {
-                  data: null;
-                  error: {
-                      message?: string;
-                      status: number;
-                      statusText: string;
-                  };
-              }> => {
+          ) => {
             const res = $fetch(`/sign-in/${providerId}`, {
               method: 'POST',
               body: {
@@ -203,17 +93,7 @@ export const biliBasicClient = (_options: BiliBasicClientOptions = {}): {
             mid: bigint,
             identifier: string,
             fetchOptions?: BetterFetchOption,
-          ): Promise<{
-                  data: unknown;
-                  error: null;
-              } | {
-                  data: null;
-                  error: {
-                      message?: string;
-                      status: number;
-                      statusText: string;
-                  };
-              }> => {
+          ) => {
             const res = $fetch(`/sign-up/${providerId}`, {
               method: 'POST',
               body: {
@@ -231,4 +111,4 @@ export const biliBasicClient = (_options: BiliBasicClientOptions = {}): {
 };
 
 export type BiliBasicClientPlugin = ReturnType<typeof biliBasicClient>;
-export type { BiliBasicPluginOptions } from '../plugins/index';
+export type { BiliBasicPluginOptions } from '../plugins/index.ts';

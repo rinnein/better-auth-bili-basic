@@ -1,9 +1,9 @@
 import {
   BiliInfoValidationOptionsDefaultSchema,
-  BiliInfoValidationOptionsZodType,
+  type BiliInfoValidationOptionsZodType,
   RevokeBiliInfo,
   ValidateBiliInfo,
-} from '@/lib/validate-bili-info';
+} from '@/lib/validate-bili-info.ts';
 import type { Account, BetterAuthPlugin } from 'better-auth';
 import {
   APIError,
@@ -13,7 +13,7 @@ import {
 import { setSessionCookie } from 'better-auth/cookies';
 import { nanoid } from 'nanoid';
 import z from 'zod';
-import { pluginId, providerId } from '../const';
+import { pluginId, providerId } from '../const.ts';
 
 export interface BiliBasicPluginOptions {
   infoRestrictions?: BiliInfoValidationOptionsZodType;
@@ -36,12 +36,13 @@ const requestBodySchema = z.object({
   mid: z.string().regex(/^\d+$/, 'mid must be numeric string'),
 });
 
-export const identifierSchema: z.ZodTemplateLiteral<`${string}:${string}`> = z.templateLiteral([
-  z.string().startsWith(`${providerId}:bind:`),
-  z.string().length(8),
-  z.literal(':'),
-  z.nanoid(),
-]);
+export const identifierSchema: z.ZodTemplateLiteral<`${string}:${string}`> =
+  z.templateLiteral([
+    z.string().startsWith(`${providerId}:bind:`),
+    z.string().length(8),
+    z.literal(':'),
+    z.nanoid(),
+  ]);
 
 function parseMid(mid: string) {
   if (!/^\d+$/.test(mid)) {
