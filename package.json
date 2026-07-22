@@ -43,7 +43,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "vp build",
+    "build": "vp pack",
     "prepare": "vp config"
   },
   "dependencies": {

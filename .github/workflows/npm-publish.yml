@@ -18,30 +18,28 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: voidzero-dev/setup-vp@v1
         with:
-          node-version: 24.x
-          registry-url: 'https://registry.npmjs.org'
-
-      - uses: oven-sh/setup-bun@v2
+          node-version: '26'
+          cache: true
 
       - name: Install dependencies
-        run: bun install
+        run: vp install
 
       - name: Build better-auth-bili-basic
         run: |
           cd ${{ github.workspace }}
-          bun run build
+          vp pack
 
       - name: Publish better-auth-bili-basic
         run: |
           cd ${{ github.workspace }}
           npm publish --provenance --access public
 
-      - run: bun x changelogithub
+      - run: vpx changelogithub
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
