@@ -36,7 +36,7 @@ const requestBodySchema = z.object({
   mid: z.string().regex(/^\d+$/, 'mid must be numeric string'),
 });
 
-export const identifierSchema = z.templateLiteral([
+export const identifierSchema: z.ZodTemplateLiteral<`${string}:${string}`> = z.templateLiteral([
   z.string().startsWith(`${providerId}:bind:`),
   z.string().length(8),
   z.literal(':'),
