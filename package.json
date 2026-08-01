@@ -1,6 +1,6 @@
 {
   "name": "better-auth-bili-basic",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "A plugin for better-auth that provides basic authentication features for bili accounts.",
   "keywords": [
     "authentication",

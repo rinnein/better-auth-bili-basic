@@ -25,6 +25,7 @@ export async function ValidateBiliInfo(
   code?: string,
   options: BiliInfoValidationOptionsZodType = BiliInfoValidationOptionsDefaultSchema,
   authMark: string = 'bauth',
+  skipCodeValidation = false,
 ) {
   const info = await BiliInfo(mid);
   const card = info.data.card;
@@ -37,7 +38,7 @@ export async function ValidateBiliInfo(
     level: card.level_info.current_level,
     vip: card.vip.type,
   };
-  if (authMark !== 'dev') {
+  if (!skipCodeValidation) {
     if (v.sign.includes(`${authMark}::revoke`))
       return { success: false, error: new Error('Account is revoking.') };
     if (!v.sign.includes(`${authMark}:${code}`))
@@ -48,8 +49,12 @@ export async function ValidateBiliInfo(
   else return { success: false, error: customCheck.error };
 }
 
-export async function RevokeBiliInfo(mid: bigint, authMark: string = 'bauth') {
-  if (authMark === 'dev') return { success: true };
+export async function RevokeBiliInfo(
+  mid: bigint,
+  authMark: string = 'bauth',
+  skipCodeValidation = false,
+) {
+  if (skipCodeValidation) return { success: true };
   const info = await BiliInfo(mid);
   if (info.data.card.sign.includes(`${authMark}::revoke`))
     return { success: true };

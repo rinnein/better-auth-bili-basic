@@ -1,9 +1,19 @@
 import type { BetterAuthClientPlugin } from 'better-auth';
-import { ObjId, pluginId, providerId } from '../const.ts';
-import { biliBasic, identifierSchema } from '../plugins/main.ts';
 import type { BetterFetchOption } from 'better-auth/client';
+import { ObjId, pluginId, providerId } from '../const.ts';
+import {
+  identifierSchema,
+  midToString,
+  type MID,
+} from '../shared/contracts.ts';
+import { BILI_BASIC_ERROR_CODES } from '../shared/errors.ts';
+import type { biliBasic } from '../plugins/main.ts';
 
 export interface BiliBasicClientOptions {}
+
+export interface BiliBasicRequestOptions {
+  fetchOptions?: BetterFetchOption;
+}
 
 const sessionUpdatePaths = new Set([
   `/${providerId}/link`,
@@ -11,23 +21,22 @@ const sessionUpdatePaths = new Set([
   `/sign-up/${providerId}`,
 ]);
 
-type MID = number | bigint | string;
-function midParser(mid: MID) {
-  if (typeof mid === 'number') {
-    if (!Number.isSafeInteger(mid))
-      throw new Error('Mid number must be a safe integer.');
-    return mid.toString();
-  }
-  if (typeof mid === 'bigint') {
-    return mid.toString();
-  }
-  return mid;
+function requestBody(mid: MID): { mid: string } {
+  return { mid: midToString(mid) };
 }
 
 export const biliBasicClient = (_options: BiliBasicClientOptions = {}) => {
   return {
     id: pluginId,
+    $ERROR_CODES: BILI_BASIC_ERROR_CODES,
     $InferServerPlugin: {} as ReturnType<typeof biliBasic>,
+    pathMethods: {
+      [`/${providerId}/send`]: 'POST',
+      [`/${providerId}/link`]: 'POST',
+      [`/${providerId}/revoke`]: 'POST',
+      [`/sign-in/${providerId}`]: 'POST',
+      [`/sign-up/${providerId}`]: 'POST',
+    },
     atomListeners: [
       {
         signal: '$sessionSignal',
@@ -39,70 +48,68 @@ export const biliBasicClient = (_options: BiliBasicClientOptions = {}) => {
     getActions: ($fetch) => {
       return {
         biliBasic: {
-          send: async (mid: bigint, fetchOptions?: BetterFetchOption) => {
-            const res = $fetch(`/${providerId}/send`, {
-              method: 'POST',
-              body: { mid: midParser(mid) },
-              ...fetchOptions,
-            });
-            return res;
-          },
-          link: async (
-            mid: bigint,
-            identifier: string,
+          send: async (
+            data: { mid: MID },
             fetchOptions?: BetterFetchOption,
           ) => {
-            const res = $fetch(`/${providerId}/link`, {
+            return $fetch(`/${providerId}/send`, {
+              method: 'POST',
+              body: requestBody(data.mid),
+              ...fetchOptions,
+            });
+          },
+          link: async (
+            data: { mid: MID; identifier: string },
+            fetchOptions?: BetterFetchOption,
+          ) => {
+            return $fetch(`/${providerId}/link`, {
               method: 'POST',
               body: {
-                mid: midParser(mid),
-                identifier: identifierSchema.parse(identifier),
+                mid: midToString(data.mid),
+                identifier: identifierSchema.parse(data.identifier),
               },
               ...fetchOptions,
             });
-            return res;
           },
-          revoke: async (mid: bigint, fetchOptions?: BetterFetchOption) => {
-            const res = $fetch(`/${providerId}/revoke`, {
+          revoke: async (
+            data: { mid: MID },
+            fetchOptions?: BetterFetchOption,
+          ) => {
+            return $fetch(`/${providerId}/revoke`, {
               method: 'POST',
-              body: { mid: midParser(mid) },
+              body: requestBody(data.mid),
               ...fetchOptions,
             });
-            return res;
           },
         },
         signIn: {
           [ObjId]: async (
-            mid: bigint,
-            identifier: string,
+            data: { mid: MID; identifier: string },
             fetchOptions?: BetterFetchOption,
           ) => {
-            const res = $fetch(`/sign-in/${providerId}`, {
+            return $fetch(`/sign-in/${providerId}`, {
               method: 'POST',
               body: {
-                mid: midParser(mid),
-                identifier: identifierSchema.parse(identifier),
+                mid: midToString(data.mid),
+                identifier: identifierSchema.parse(data.identifier),
               },
               ...fetchOptions,
             });
-            return res;
           },
         },
         signUp: {
           [ObjId]: async (
-            mid: bigint,
-            identifier: string,
+            data: { mid: MID; identifier: string },
             fetchOptions?: BetterFetchOption,
           ) => {
-            const res = $fetch(`/sign-up/${providerId}`, {
+            return $fetch(`/sign-up/${providerId}`, {
               method: 'POST',
               body: {
-                mid: midParser(mid),
-                identifier: identifierSchema.parse(identifier),
+                mid: midToString(data.mid),
+                identifier: identifierSchema.parse(data.identifier),
               },
               ...fetchOptions,
             });
-            return res;
           },
         },
       };

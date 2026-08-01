@@ -1,4 +1,8 @@
-import ky from 'ky';
+import * as kyModule from 'ky';
+
+const ky =
+  (kyModule.default as unknown as { default?: typeof kyModule.default })
+    .default ?? kyModule.default;
 
 export const kyi = ky.create({
   headers: {
