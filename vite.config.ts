@@ -33,7 +33,9 @@ export default defineConfig({
   pack: {
     entry: {
       index: './src/index.ts',
+      'server/index': './src/plugins/index.ts',
       'client/index': './src/client/index.ts',
+      'utils/index': './src/lib/index.ts',
     },
     name: 'BetterAuthBiliBasic',
     format: ['es', 'cjs'],

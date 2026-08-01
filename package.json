@@ -1,6 +1,6 @@
 {
   "name": "better-auth-bili-basic",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A plugin for better-auth that provides basic authentication features for bili accounts.",
   "keywords": [
     "authentication",
@@ -39,6 +39,14 @@
     "./client": {
       "import": "./dist/client/index.mjs",
       "require": "./dist/client/index.cjs"
+    },
+    "./server": {
+      "import": "./dist/server/index.mjs",
+      "require": "./dist/server/index.cjs"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.mjs",
+      "require": "./dist/utils/index.cjs"
     },
     "./package.json": "./package.json"
   },
