@@ -1,6 +1,6 @@
 import {
   BiliInfoValidationOptionsDefaultSchema,
-  type BiliInfoValidationOptionsZodType,
+  type BiliInfoValidationSchema,
   RevokeBiliInfo,
   ValidateBiliInfo,
 } from '@/lib/validate-bili-info.ts';
@@ -28,7 +28,7 @@ export interface BiliBasicSignUpOptions {
 }
 
 export interface BiliBasicPluginOptions {
-  infoRestrictions?: BiliInfoValidationOptionsZodType;
+  infoRestrictions?: BiliInfoValidationSchema;
   authMark?: string;
   /** Explicitly opt into skipping Bili sign validation for local development. */
   skipCodeValidation?: boolean;

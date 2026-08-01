@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { RevokeBiliInfo, ValidateBiliInfo } from './validate-bili-info.ts';
+import {
+  BiliInfoValidationOptionsDefaultSchema,
+  RevokeBiliInfo,
+  ValidateBiliInfo,
+  type BiliInfoValidationSchema,
+} from './validate-bili-info.ts';
 
 vi.mock('./bili-info.ts', () => ({
   BiliInfo: vi.fn(async () => ({
@@ -36,5 +41,71 @@ describe('Bili validation bypass', () => {
 
     expect(result.success).toBe(true);
     expect(revoke.success).toBe(true);
+  });
+});
+
+describe('Bili info restrictions', () => {
+  it('uses the default Zod schema through Standard Schema', async () => {
+    const result = await ValidateBiliInfo(
+      1001n,
+      undefined,
+      BiliInfoValidationOptionsDefaultSchema,
+      'bauth',
+      true,
+    );
+
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts synchronous Standard Schema validators', async () => {
+    const schema: BiliInfoValidationSchema = {
+      '~standard': {
+        version: 1,
+        vendor: 'test',
+        validate(value) {
+          const info = value as { fans: number };
+          return info.fans === 0
+            ? { value }
+            : { issues: [{ message: 'fans must be zero' }] };
+        },
+      },
+    };
+
+    const result = await ValidateBiliInfo(
+      1001n,
+      undefined,
+      schema,
+      'bauth',
+      true,
+    );
+
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts asynchronous validators and formats Standard Schema issues', async () => {
+    const schema: BiliInfoValidationSchema = {
+      '~standard': {
+        version: 1,
+        vendor: 'test',
+        async validate() {
+          return {
+            issues: [{ message: 'not eligible', path: [{ key: 'fans' }] }],
+          };
+        },
+      },
+    };
+
+    const result = await ValidateBiliInfo(
+      1001n,
+      undefined,
+      schema,
+      'bauth',
+      true,
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success && result.error) {
+      expect(result.error.message).toBe('fans: not eligible');
+    }
   });
 });

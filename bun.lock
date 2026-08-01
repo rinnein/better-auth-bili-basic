@@ -5,6 +5,7 @@
     "": {
       "name": "@dymo-api/better-auth",
       "dependencies": {
+        "@standard-schema/spec": "^1.1.0",
         "better-auth": "^1.6.25",
         "ky": "^2.0.2",
         "nanoid": "^6.0.0",

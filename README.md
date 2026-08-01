@@ -33,16 +33,16 @@ export const auth = betterAuth({
 
 `biliBasic(options?)` 支持以下配置：
 
-| 配置项                  | 默认值         | 说明                                                                                                             |
-| ----------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `infoRestrictions`      | 内置默认规则   | 使用 Zod 限制 B 站账号信息。默认要求账号未封禁、粉丝数为非负数、等级为 `0-6`、VIP 类型为 `0-2`，并校验签名字段。 |
-| `authMark`              | `"bauth"`      | 写入 B 站签名的标记。用户需要将 `${authMark}:${code}` 临时写入签名；撤销绑定时使用 `${authMark}::revoke`。       |
-| `skipCodeValidation`    | `false`        | 是否跳过 B 站签名和撤销标记校验。仅建议用于本地测试，生产环境不要开启。                                          |
-| `codeTTLSeconds`        | `3600`         | challenge 有效期，单位为秒，必须是正整数。每个 mid 同时只保留最新 challenge。                                    |
-| `codeLength`            | `5`            | challenge 验证码长度，范围为 `1-100`。                                                                           |
-| `userEmailDomain`       | `"bili.local"` | 自动注册时临时邮箱的域名，例如 `123456@bili.local`。                                                             |
-| `defaultUserNamePrefix` | `"bili"`       | B 站资料没有可用名称时生成用户名的前缀。                                                                         |
-| `signUpOnVerification`  | 未启用         | 是否允许未登录用户通过 B 站验证直接注册。                                                                        |
+| 配置项                  | 默认值         | 说明                                                                                                                                   |
+| ----------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `infoRestrictions`      | 内置默认规则   | 使用 Standard Schema 兼容验证器限制 B 站账号信息。默认要求账号未封禁、粉丝数为非负数、等级为 `0-6`、VIP 类型为 `0-2`，并校验签名字段。 |
+| `authMark`              | `"bauth"`      | 写入 B 站签名的标记。用户需要将 `${authMark}:${code}` 临时写入签名；撤销绑定时使用 `${authMark}::revoke`。                             |
+| `skipCodeValidation`    | `false`        | 是否跳过 B 站签名和撤销标记校验。仅建议用于本地测试，生产环境不要开启。                                                                |
+| `codeTTLSeconds`        | `3600`         | challenge 有效期，单位为秒，必须是正整数。每个 mid 同时只保留最新 challenge。                                                          |
+| `codeLength`            | `5`            | challenge 验证码长度，范围为 `1-100`。                                                                                                 |
+| `userEmailDomain`       | `"bili.local"` | 自动注册时临时邮箱的域名，例如 `123456@bili.local`。                                                                                   |
+| `defaultUserNamePrefix` | `"bili"`       | B 站资料没有可用名称时生成用户名的前缀。                                                                                               |
+| `signUpOnVerification`  | 未启用         | 是否允许未登录用户通过 B 站验证直接注册。                                                                                              |
 
 ### `signUpOnVerification`
 
@@ -63,6 +63,8 @@ export const auth = betterAuth({
 
 ### `infoRestrictions` 示例
 
+`infoRestrictions` 接受 Standard Schema 规范的验证器，下面以 Zod 为例：
+
 ```ts
 import { z } from 'zod';
 
@@ -75,7 +77,7 @@ biliBasic({
 });
 ```
 
-验证时会先检查 B 站签名，再使用 `infoRestrictions` 校验账号基本信息。自定义 schema 只需要声明希望限制的字段。
+Valibot、ArkType 等实现 Standard Schema 的常见验证库也可以直接传入。验证时会先检查 B 站签名，再使用 `infoRestrictions` 校验账号基本信息；自定义 schema 只需要声明希望限制的字段。
 
 ## 客户端
 

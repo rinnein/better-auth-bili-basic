@@ -1,4 +1,13 @@
 export { BiliInfo } from './bili-info.ts';
+export {
+  BiliInfoValidationOptionsDefaultSchema,
+  RevokeBiliInfo,
+  ValidateBiliInfo,
+} from './validate-bili-info.ts';
+export type {
+  BiliInfoValidationData,
+  BiliInfoValidationSchema,
+} from './validate-bili-info.ts';
 export { kyi } from './ky.ts';
 export {
   challengeRequestSchema,
