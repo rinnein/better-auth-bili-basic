@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { biliBasicClient } from './main.ts';
 
 describe('biliBasicClient', () => {
@@ -15,6 +15,9 @@ describe('biliBasicClient', () => {
 
     expect(plugin.pathMethods?.['/bili-basic/send']).toBe('POST');
     expect(plugin.pathMethods?.['/sign-in/bili-basic']).toBe('POST');
+    expect(Object.keys(plugin.pathMethods ?? {})).not.toContain(
+      '/sign-up/bili-basic',
+    );
     expect(plugin.atomListeners?.[0]?.signal).toBe('$sessionSignal');
 
     await actions.biliBasic.send({ mid: 123456n });

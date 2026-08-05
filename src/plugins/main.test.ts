@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { biliBasic } from './main.ts';
 
 describe('biliBasic plugin', () => {
-  it('defaults user deletion to enabled for Bili-only sign-up', () => {
+  it('defaults user deletion to enabled for Bili-only auto sign-up', () => {
     const plugin = biliBasic({
       signUpOnVerification: { enabled: true },
     });
@@ -28,7 +28,6 @@ describe('biliBasic plugin', () => {
       'send',
       'link',
       'signIn',
-      'signUp',
       'revoke',
     ]);
   });

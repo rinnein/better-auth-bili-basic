@@ -183,10 +183,7 @@ async function hasUserBinding(ctx: any, userId: string) {
 }
 
 function accountAlreadyBound() {
-  return error(
-    'BINDING_EXISTS',
-    'This mid is already bound. Publish the revoke mark and call revoke first.',
-  );
+  return error('BINDING_EXISTS');
 }
 
 function sessionResponse<TUser, TAccount>(
@@ -229,13 +226,6 @@ export const biliBasic = (pluginOptions: BiliBasicPluginOptions = {}) => {
         async (ctx) => {
           const currentTime = now();
           const mid = normalizeMid(ctx.body.mid);
-
-          const existingBinding =
-            await ctx.context.internalAdapter.findAccountByProviderId(
-              mid,
-              providerId,
-            );
-          if (existingBinding) throw accountAlreadyBound();
 
           const midHash = await hashMid(mid);
           const identifier = challengeIdentifier(midHash);
@@ -321,57 +311,13 @@ export const biliBasic = (pluginOptions: BiliBasicPluginOptions = {}) => {
           body: challengeRequestSchema,
           metadata: {
             openapi: {
-              summary: 'Sign in with Bili',
-              description: 'Sign in with a verified Bili account.',
+              summary: 'Sign in or sign up with Bili',
+              description:
+                'Sign in with an existing Bili account or create one after verification.',
             },
           },
         },
         async (ctx) => {
-          const mid = normalizeMid(ctx.body.mid);
-          await validateChallenge(ctx, ctx.body.identifier, mid, options);
-
-          const account =
-            await ctx.context.internalAdapter.findAccountByProviderId(
-              mid,
-              providerId,
-            );
-          if (!account) {
-            throw error(
-              'BINDING_EXISTS',
-              'No account is bound to this mid. Please sign up first.',
-            );
-          }
-
-          const user = await ctx.context.internalAdapter.findUserById(
-            account.userId,
-          );
-          if (!user) throw error('USER_NOT_FOUND');
-
-          await consumeChallenge(ctx, ctx.body.identifier, mid);
-          const session = await ctx.context.internalAdapter.createSession(
-            user.id,
-          );
-          await setSessionCookie(ctx, { session, user });
-
-          return ctx.json(sessionResponse(session, user, account));
-        },
-      ),
-      signUp: createAuthEndpoint(
-        `/sign-up/${providerId}`,
-        {
-          method: 'POST',
-          body: challengeRequestSchema,
-          metadata: {
-            openapi: {
-              summary: 'Sign up with Bili',
-              description: 'Create a user from a verified Bili account.',
-            },
-          },
-        },
-        async (ctx) => {
-          const signUpOptions = options.signUpOnVerification;
-          if (!signUpOptions?.enabled) throw error('SIGN_UP_DISABLED');
-
           const mid = normalizeMid(ctx.body.mid);
           const biliInfo = await validateChallenge(
             ctx,
@@ -379,14 +325,29 @@ export const biliBasic = (pluginOptions: BiliBasicPluginOptions = {}) => {
             mid,
             options,
           );
-          if (
+
+          const account =
             await ctx.context.internalAdapter.findAccountByProviderId(
               mid,
               providerId,
-            )
-          ) {
-            throw accountAlreadyBound();
+            );
+          if (account) {
+            const user = await ctx.context.internalAdapter.findUserById(
+              account.userId,
+            );
+            if (!user) throw error('USER_NOT_FOUND');
+
+            await consumeChallenge(ctx, ctx.body.identifier, mid);
+            const session = await ctx.context.internalAdapter.createSession(
+              user.id,
+            );
+            await setSessionCookie(ctx, { session, user });
+
+            return ctx.json(sessionResponse(session, user, account));
           }
+
+          const signUpOptions = options.signUpOnVerification;
+          if (!signUpOptions?.enabled) throw error('SIGN_UP_DISABLED');
 
           await consumeChallenge(ctx, ctx.body.identifier, mid);
           const email =
@@ -510,11 +471,6 @@ export const biliBasic = (pluginOptions: BiliBasicPluginOptions = {}) => {
         pathMatcher: (path) => path === `/sign-in/${providerId}`,
         max: 10,
         window: 60,
-      },
-      {
-        pathMatcher: (path) => path === `/sign-up/${providerId}`,
-        max: 10,
-        window: 10,
       },
       {
         pathMatcher: (path) => path === `/${providerId}/revoke`,

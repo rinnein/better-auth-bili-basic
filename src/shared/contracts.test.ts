@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { identifierSchema, midToString, parseIdentifier } from './contracts.ts';
 
 describe('shared contracts', () => {

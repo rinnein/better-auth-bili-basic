@@ -18,7 +18,6 @@ export interface BiliBasicRequestOptions {
 const sessionUpdatePaths = new Set([
   `/${providerId}/link`,
   `/sign-in/${providerId}`,
-  `/sign-up/${providerId}`,
 ]);
 
 function requestBody(mid: MID): { mid: string } {
@@ -35,7 +34,6 @@ export const biliBasicClient = (_options: BiliBasicClientOptions = {}) => {
       [`/${providerId}/link`]: 'POST',
       [`/${providerId}/revoke`]: 'POST',
       [`/sign-in/${providerId}`]: 'POST',
-      [`/sign-up/${providerId}`]: 'POST',
     },
     atomListeners: [
       {
@@ -88,21 +86,6 @@ export const biliBasicClient = (_options: BiliBasicClientOptions = {}) => {
             fetchOptions?: BetterFetchOption,
           ) => {
             return $fetch(`/sign-in/${providerId}`, {
-              method: 'POST',
-              body: {
-                mid: midToString(data.mid),
-                identifier: identifierSchema.parse(data.identifier),
-              },
-              ...fetchOptions,
-            });
-          },
-        },
-        signUp: {
-          [ObjId]: async (
-            data: { mid: MID; identifier: string },
-            fetchOptions?: BetterFetchOption,
-          ) => {
-            return $fetch(`/sign-up/${providerId}`, {
               method: 'POST',
               body: {
                 mid: midToString(data.mid),
