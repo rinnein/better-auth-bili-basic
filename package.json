@@ -1,6 +1,6 @@
 {
   "name": "better-auth-bili-basic",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A plugin for better-auth that provides basic authentication features for bili accounts.",
   "keywords": [
     "authentication",
@@ -56,19 +56,19 @@
   },
   "dependencies": {
     "@standard-schema/spec": "^1.1.0",
-    "better-auth": "^1.6.26",
+    "better-auth": "^1.7.1",
     "ky": "^2.0.2",
     "nanoid": "^6.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "typescript": "^7.0.2",
-    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.8",
-    "vite-plus": "0.2.8"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.9",
+    "vite-plus": "0.2.9"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.8"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.9"
   },
   "packageManager": "bun@1.3.14",
   "inlinedDependencies": {
