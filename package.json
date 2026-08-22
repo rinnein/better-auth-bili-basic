@@ -1,6 +1,6 @@
 {
   "name": "better-auth-bili-basic",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A plugin for better-auth that provides basic authentication features for bili accounts.",
   "keywords": [
     "authentication",
@@ -70,7 +70,7 @@
   "overrides": {
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.9"
   },
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.0",
   "inlinedDependencies": {
     "@better-fetch/fetch": "1.3.1"
   }

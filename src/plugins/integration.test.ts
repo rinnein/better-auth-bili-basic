@@ -1,4 +1,5 @@
 import { getTestInstance } from 'better-auth/test';
+import { createLocalAccountIssuer } from 'better-auth/db';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { biliBasic } from './main.ts';
 import { biliBasicClient } from '../client/main.ts';
@@ -116,10 +117,10 @@ describe('biliBasic Better Auth integration', () => {
 
     expect(signIn.error?.message).toBe('Sign-up on verification is disabled.');
     expect(
-      await context.internalAdapter.findAccountByProviderId(
-        '1005',
-        'bili-basic',
-      ),
+      await context.internalAdapter.findAccountByKey({
+        issuer: createLocalAccountIssuer('bili-basic'),
+        accountId: '1005',
+      }),
     ).toBeNull();
     expect(
       await context.internalAdapter.findUserByEmail('1005@bili.local'),
@@ -137,6 +138,7 @@ describe('biliBasic Better Auth integration', () => {
       },
       {
         accountId: '1006',
+        issuer: createLocalAccountIssuer('bili-basic'),
         providerId: 'bili-basic',
       },
     );
@@ -149,6 +151,40 @@ describe('biliBasic Better Auth integration', () => {
     expect(signIn.error).toBeNull();
     const signInData = signIn.data as unknown as BiliAuthPayload;
     expect(signInData.data.user.id).toBe(existing.user.id);
+  });
+
+  it('links a verified Bili account to the current user', async () => {
+    const instance = await createInstance(undefined, false);
+    const email = 'link@bili.local';
+    const password = 'link-password';
+    const signUp = await instance.client.signUp.email({
+      email,
+      password,
+      name: 'Link User',
+    });
+    const challenge = await instance.client.biliBasic.send({ mid: '1007' });
+
+    expect(signUp.error).toBeNull();
+    expect(challenge.error).toBeNull();
+
+    await instance.runWithUser(email, password, async () => {
+      const link = await instance.client.biliBasic.link({
+        mid: '1007',
+        identifier: challenge.data!.data.identifier,
+      });
+
+      expect(link.error).toBeNull();
+      const linkData = link.data as unknown as BiliAuthPayload;
+      expect(linkData.data.account.accountId).toBe('1007');
+    });
+
+    const context = await instance.auth.$context;
+    expect(
+      await context.internalAdapter.findAccountByKey({
+        issuer: createLocalAccountIssuer('bili-basic'),
+        accountId: '1007',
+      }),
+    ).not.toBeNull();
   });
 
   it('deletes the generated user on revoke by default', async () => {

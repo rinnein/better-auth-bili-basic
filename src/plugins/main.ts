@@ -11,6 +11,7 @@ import {
   sessionMiddleware,
 } from 'better-auth/api';
 import { setSessionCookie } from 'better-auth/cookies';
+import { createLocalAccountIssuer } from 'better-auth/db';
 import { nanoid } from 'nanoid';
 import { challengeRequestSchema, midSchema } from '../shared/contracts.ts';
 import {
@@ -106,6 +107,8 @@ function challengeIdentifier(midHash: string): string {
   return `${challengePrefix(midHash)}${nanoid()}`;
 }
 
+const accountIssuer = createLocalAccountIssuer(providerId);
+
 async function hashMid(mid: string): Promise<string> {
   const hashBuffer = await crypto.subtle.digest(
     'SHA-256',
@@ -179,6 +182,13 @@ async function hasUserBinding(ctx: any, userId: string) {
     await ctx.context.internalAdapter.findAccountByUserId(userId);
   return accounts.find((account: { providerId: string }) => {
     return account.providerId === providerId;
+  });
+}
+
+async function findBiliAccount(ctx: any, mid: string) {
+  return ctx.context.internalAdapter.findAccountByKey({
+    issuer: accountIssuer,
+    accountId: mid,
   });
 }
 
@@ -282,18 +292,14 @@ export const biliBasic = (pluginOptions: BiliBasicPluginOptions = {}) => {
           if (await hasUserBinding(ctx, user.id)) {
             throw error('USER_BINDING_EXISTS');
           }
-          if (
-            await ctx.context.internalAdapter.findAccountByProviderId(
-              mid,
-              providerId,
-            )
-          ) {
+          if (await findBiliAccount(ctx, mid)) {
             throw accountAlreadyBound();
           }
 
           await consumeChallenge(ctx, ctx.body.identifier, mid);
           const account = await ctx.context.internalAdapter.createAccount({
             accountId: mid,
+            issuer: accountIssuer,
             providerId,
             userId: user.id,
           });
@@ -326,11 +332,7 @@ export const biliBasic = (pluginOptions: BiliBasicPluginOptions = {}) => {
             options,
           );
 
-          const account =
-            await ctx.context.internalAdapter.findAccountByProviderId(
-              mid,
-              providerId,
-            );
+          const account = await findBiliAccount(ctx, mid);
           if (account) {
             const user = await ctx.context.internalAdapter.findUserById(
               account.userId,
@@ -368,6 +370,7 @@ export const biliBasic = (pluginOptions: BiliBasicPluginOptions = {}) => {
               },
               {
                 accountId: mid,
+                issuer: accountIssuer,
                 providerId,
               },
             );
@@ -412,11 +415,7 @@ export const biliBasic = (pluginOptions: BiliBasicPluginOptions = {}) => {
             throw error('CHALLENGE_NOT_FOUND', errorMessage(revoke.error));
           }
 
-          const account =
-            await ctx.context.internalAdapter.findAccountByProviderId(
-              mid,
-              providerId,
-            );
+          const account = await findBiliAccount(ctx, mid);
           if (account) {
             const signUpOptions = options.signUpOnVerification;
             const user = await ctx.context.internalAdapter.findUserById(
